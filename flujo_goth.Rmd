@@ -1,0 +1,118 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Librerías
+```{r}
+library(dplyr)
+library(magrittr)
+library(ggplot2)
+library(forcats)
+library(ggalluvial)
+extrafont::loadfonts(device = "win")
+```
+
+
+# Import Data
+
+```{r}
+tiempo_pantalla <- readr::read_csv("https://raw.githubusercontent.com/cienciadedatos/datos-de-miercoles/master/datos/2019/2019-04-17/tiempo_pantalla.csv")
+
+cambio_lealtades <- readr::read_csv("https://raw.githubusercontent.com/cienciadedatos/datos-de-miercoles/master/datos/2019/2019-04-17/cambio_lealtades.csv")
+
+personajes_libros <- readr::read_csv("https://raw.githubusercontent.com/cienciadedatos/datos-de-miercoles/master/datos/2019/2019-04-17/personajes_libro.csv")
+```
+
+# Análisis 
+
+
+```{r}
+head(personajes_libros)
+```
+```{r}
+(cambio_lealtades) 
+```
+
+```{r}
+head(tiempo_pantalla)
+```
+
+# Promedio de tiempo en pantalla
+
+```{r}
+tiempo_pantalla %>% 
+  distinct() %>% 
+  mutate(promedio_pantalla=minutos_pantalla/episodios) %>% 
+  arrange(desc(promedio_pantalla)) %>% 
+  slice(1:15) %>% 
+  ggplot(aes(x=fct_reorder(nombre,promedio_pantalla),y=promedio_pantalla,fill=nombre))+
+  geom_bar(stat="identity")+
+  coord_flip()
+```
+
+# Movimientos entre casas
+
+
+```{r}
+
+lealtad_flujo <- cambio_lealtades %>% 
+  select(-episodios,-origen) %>% 
+  tidyr::gather(temporada,lealtad,-nombre) %>% 
+    distinct() %>% 
+  filter(!stringr::str_detect(nombre,"uncredited")) %>% 
+  filter(lealtad!="Muerta/o") 
+
+unique(lealtad_flujo$lealtad)
+
+mayores_lealtad <- lealtad_flujo %>% 
+  group_by(lealtad) %>%
+  filter(temporada=="fin_t7" | temporada=="fin_t6" | temporada=="fin_t5" | temporada=="fin_t4") %>% 
+  summarise(count=n()) %>% 
+  arrange(desc(count)) %>% 
+    slice(1:10) %>% 
+  pull(lealtad)
+
+
+lealtad_flujo <-  lealtad_flujo %>% 
+  filter(lealtad %in% mayores_lealtad)
+  
+```
+
+# Gráfico
+
+```{r}
+lealtad_flujo$lealtad <- factor(lealtad_flujo$lealtad,levels=unique(lealtad_flujo$lealtad),ordered = TRUE)
+lealtad_flujo$temporada <- factor(lealtad_flujo$temporada,levels=unique(lealtad_flujo$temporada),ordered = TRUE)
+windowsFonts(Roboto = windowsFont("Roboto Medium"))
+ggplot(lealtad_flujo,
+       aes(x = temporada, stratum = lealtad, alluvium = nombre,
+           fill = lealtad)) +
+   scale_fill_brewer(type = "qual", palette = "Paired") +
+  geom_flow() +
+  geom_stratum() +
+  theme_minimal()+
+  theme(legend.position = "right") +
+  labs(title="Movimientos en lealtades",
+       subtitle = "Se consideran las 8 mayores facciones",
+       y="Frecuencia",
+       x="Temporada",
+       fill="Lealtad")+
+  theme(text= element_text(size = 16, family = "Roboto Medium"),
+        plot.background = element_rect(fill = scales::alpha("#F8EFBA",1),color="black"),
+       panel.background = element_rect(fill = scales::alpha("#F8EFBA",1),color=scales::alpha("#F8EFBA",1)),
+       panel.grid = element_line(color = scales::alpha("#F8EFBA",1)))
+  
+
+
+```
+
+```{r}
+ggsave()
+```
+
+```{r}
+data(vaccinations)
+vaccinations
+```
+
