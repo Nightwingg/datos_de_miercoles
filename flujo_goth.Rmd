@@ -53,18 +53,19 @@ tiempo_pantalla %>%
 
 # Movimientos entre casas
 
-
+## Transponer dataframe y quitar muertos
 ```{r}
-
 lealtad_flujo <- cambio_lealtades %>% 
   select(-episodios,-origen) %>% 
   tidyr::gather(temporada,lealtad,-nombre) %>% 
     distinct() %>% 
   filter(!stringr::str_detect(nombre,"uncredited")) %>% 
-  filter(lealtad!="Muerta/o") 
+  filter(lealtad!="Muerta/o")
+```
 
-unique(lealtad_flujo$lealtad)
+## Encontrar mayores facciones
 
+```{r}
 mayores_lealtad <- lealtad_flujo %>% 
   group_by(lealtad) %>%
   filter(temporada=="fin_t7" | temporada=="fin_t6" | temporada=="fin_t5" | temporada=="fin_t4") %>% 
@@ -73,10 +74,8 @@ mayores_lealtad <- lealtad_flujo %>%
     slice(1:10) %>% 
   pull(lealtad)
 
-
 lealtad_flujo <-  lealtad_flujo %>% 
   filter(lealtad %in% mayores_lealtad)
-  
 ```
 
 # Gráfico
@@ -108,11 +107,9 @@ ggplot(lealtad_flujo,
 ```
 
 ```{r}
-ggsave()
+ggsave("flujo_goth.png",dpi=600,width=12,height = 8)
+  shell.exec(getwd())
 ```
 
-```{r}
-data(vaccinations)
-vaccinations
-```
+
 
